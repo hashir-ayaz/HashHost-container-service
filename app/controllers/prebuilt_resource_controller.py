@@ -1,79 +1,23 @@
 # controllers/prebuilt_resource_controller.py
-from app import db
-from app.models.prebuilt_resource import PrebuiltResource
+from app.services.prebuilt_resource_service import (
+    create_prebuilt_resource_service,
+    get_all_prebuilt_resources_service,
+    get_prebuilt_resource_service,
+    update_prebuilt_resource_service,
+    delete_prebuilt_resource_service
+)
 
 def create_prebuilt_resource(data):
-    if not data or 'name' not in data or 'image' not in data or 'required_ports' not in data:
-        return {"error": "Missing required fields"}, 400
-
-    new_resource = PrebuiltResource(
-        name=data['name'],
-        description=data.get('description', ""),
-        image=data['image'],
-        default_config=data.get('default_config', {}),
-        required_ports=data['required_ports']
-    )
-    db.session.add(new_resource)
-    db.session.commit()
-    return {"message": "Prebuilt resource created successfully", "resource_id": new_resource.id}, 201
+    return create_prebuilt_resource_service(data)
 
 def get_all_prebuilt_resources():
-    resources = PrebuiltResource.query.all()
-    resource_list = [
-        {
-            "id": resource.id,
-            "name": resource.name,
-            "description": resource.description,
-            "image": resource.image,
-            "default_config": resource.default_config,
-            "required_ports": resource.required_ports,
-            "created_at": resource.created_at,
-            "updated_at": resource.updated_at
-        }
-        for resource in resources
-    ]
-    return resource_list, 200
+    return get_all_prebuilt_resources_service()
 
 def get_prebuilt_resource(resource_id):
-    resource = PrebuiltResource.query.get(resource_id)
-    if not resource:
-        return {"error": "Prebuilt resource not found"}, 404
-
-    return {
-        "id": resource.id,
-        "name": resource.name,
-        "description": resource.description,
-        "image": resource.image,
-        "default_config": resource.default_config,
-        "required_ports": resource.required_ports,
-        "created_at": resource.created_at,
-        "updated_at": resource.updated_at
-    }, 200
+    return get_prebuilt_resource_service(resource_id)
 
 def update_prebuilt_resource(resource_id, data):
-    resource = PrebuiltResource.query.get(resource_id)
-    if not resource:
-        return {"error": "Prebuilt resource not found"}, 404
-
-    if 'name' in data:
-        resource.name = data['name']
-    if 'description' in data:
-        resource.description = data['description']
-    if 'image' in data:
-        resource.image = data['image']
-    if 'default_config' in data:
-        resource.default_config = data['default_config']
-    if 'required_ports' in data:
-        resource.required_ports = data['required_ports']
-
-    db.session.commit()
-    return {"message": "Prebuilt resource updated successfully"}, 200
+    return update_prebuilt_resource_service(resource_id, data)
 
 def delete_prebuilt_resource(resource_id):
-    resource = PrebuiltResource.query.get(resource_id)
-    if not resource:
-        return {"error": "Prebuilt resource not found"}, 404
-
-    db.session.delete(resource)
-    db.session.commit()
-    return {"message": "Prebuilt resource deleted successfully"}, 200
+    return delete_prebuilt_resource_service(resource_id)
