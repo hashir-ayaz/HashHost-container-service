@@ -1,96 +1,49 @@
+# routers/server_routes.py
 from flask import Blueprint, request, jsonify
-from app import db
-from app.models.server import Server
+from app.controllers.server_controller import (
+    create_server,
+    get_all_servers,
+    get_server,
+    update_server,
+    delete_server
+)
 
-server_bp = Blueprint('server_bp', __name__)  # No prefix defined here
+server_bp = Blueprint('server_bp', __name__)  # No URL prefix defined here; set it when registering the blueprint
 
-# ===============================
 # 📌 CREATE SERVER (POST)
-# ===============================
 @server_bp.route('/', methods=['POST'])
-def create_server():
+def create_server_route():
     try:
         data = request.get_json()
-
-        if not data or 'name' not in data or 'ip_address' not in data:
-            return jsonify({"error": "Missing required fields"}), 400
-
-        new_server = Server(
-            name=data['name'],
-            ip_address=data['ip_address'],
-            status=data.get('status', 'inactive')  # Default to 'inactive' if not provided
-        )
-        db.session.add(new_server)
-        db.session.commit()
-
-        return jsonify({"message": "Server created successfully", "server_id": new_server.id}), 201
-
+        response, status = create_server(data)
+        return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ===============================
 # 📌 GET ALL SERVERS (GET)
-# ===============================
 @server_bp.route('/', methods=['GET'])
-def get_all_servers():
-    servers = Server.query.all()
-    server_list = [
-        {"id": server.id, "name": server.name, "ip_address": server.ip_address, "status": server.status}
-        for server in servers
-    ]
-    return jsonify(server_list), 200
+def get_all_servers_route():
+    response, status = get_all_servers()
+    return jsonify(response), status
 
-# ===============================
 # 📌 GET A SINGLE SERVER BY ID (GET)
-# ===============================
 @server_bp.route('/<int:server_id>', methods=['GET'])
-def get_server(server_id):
-    server = Server.query.get(server_id)
-    if not server:
-        return jsonify({"error": "Server not found"}), 404
+def get_server_route(server_id):
+    response, status = get_server(server_id)
+    return jsonify(response), status
 
-    return jsonify({
-        "id": server.id,
-        "name": server.name,
-        "ip_address": server.ip_address,
-        "status": server.status
-    }), 200
-
-# ===============================
 # 📌 UPDATE SERVER (PUT)
-# ===============================
 @server_bp.route('/<int:server_id>', methods=['PUT'])
-def update_server(server_id):
-    server = Server.query.get(server_id)
-    if not server:
-        return jsonify({"error": "Server not found"}), 404
-
+def update_server_route(server_id):
     try:
         data = request.get_json()
-
-        if 'name' in data:
-            server.name = data['name']
-        if 'ip_address' in data:
-            server.ip_address = data['ip_address']
-        if 'status' in data:
-            server.status = data['status']
-
-        db.session.commit()
-        return jsonify({"message": "Server updated successfully"}), 200
-
+        response, status = update_server(server_id, data)
+        return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ===============================
 # 📌 DELETE SERVER (DELETE)
-# ===============================
 @server_bp.route('/<int:server_id>', methods=['DELETE'])
-def delete_server(server_id):
-    server = Server.query.get(server_id)
-    if not server:
-        return jsonify({"error": "Server not found"}), 404
-
-    db.session.delete(server)
-    db.session.commit()
-
-    return jsonify({"message": "Server deleted successfully"}), 200
+def delete_server_route(server_id):
+    response, status = delete_server(server_id)
+    return jsonify(response), status

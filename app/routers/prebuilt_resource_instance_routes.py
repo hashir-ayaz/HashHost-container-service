@@ -1,137 +1,49 @@
+# routers/prebuilt_resource_instance_routes.py
 from flask import Blueprint, request, jsonify
-from app import db
-from app.models.prebuilt_resource_instance import PrebuiltResourceInstance
-from app.models.project import Project
-from app.models.prebuilt_resource import PrebuiltResource
+from app.controllers.prebuilt_resource_instance_controller import (
+    create_instance,
+    get_all_instances,
+    get_instance,
+    update_instance,
+    delete_instance
+)
 
-prebuilt_resource_instance_bp = Blueprint('prebuilt_resource_instance_bp', __name__)  # Define in init.py or run.py
+prebuilt_resource_instance_bp = Blueprint('prebuilt_resource_instance_bp', __name__)
 
-# ===============================
 # 📌 CREATE PREBUILT RESOURCE INSTANCE (POST)
-# ===============================
 @prebuilt_resource_instance_bp.route('/', methods=['POST'])
-def create_prebuilt_resource_instance():
+def create_instance_route():
     try:
         data = request.get_json()
-
-        if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_ports' not in data:
-            return jsonify({"error": "Missing required fields"}), 400
-
-        # Ensure the project exists
-        project = Project.query.get(data['project_id'])
-        if not project:
-            return jsonify({"error": "Project not found"}), 404
-
-        # Ensure the prebuilt resource exists
-        resource = PrebuiltResource.query.get(data['resource_id'])
-        if not resource:
-            return jsonify({"error": "Prebuilt resource not found"}), 404
-
-        new_instance = PrebuiltResourceInstance(
-            project_id=data['project_id'],
-            resource_id=data['resource_id'],
-            custom_config=data.get('custom_config', {}),
-            assigned_ports=data['assigned_ports'],
-            status=data.get('status', 'pending')
-        )
-        db.session.add(new_instance)
-        db.session.commit()
-
-        return jsonify({"message": "Prebuilt resource instance created successfully", "instance_id": new_instance.id}), 201
-
+        response, status = create_instance(data)
+        return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ===============================
 # 📌 GET ALL PREBUILT RESOURCE INSTANCES (GET)
-# ===============================
 @prebuilt_resource_instance_bp.route('/', methods=['GET'])
-def get_all_prebuilt_resource_instances():
-    instances = PrebuiltResourceInstance.query.all()
-    instance_list = [
-        {
-            "id": instance.id,
-            "project_id": instance.project_id,
-            "resource_id": instance.resource_id,
-            "custom_config": instance.custom_config,
-            "assigned_ports": instance.assigned_ports,
-            "status": instance.status,
-            "created_at": instance.created_at,
-            "updated_at": instance.updated_at
-        }
-        for instance in instances
-    ]
-    return jsonify(instance_list), 200
+def get_all_instances_route():
+    response, status = get_all_instances()
+    return jsonify(response), status
 
-# ===============================
 # 📌 GET A SINGLE PREBUILT RESOURCE INSTANCE BY ID (GET)
-# ===============================
 @prebuilt_resource_instance_bp.route('/<int:instance_id>', methods=['GET'])
-def get_prebuilt_resource_instance(instance_id):
-    instance = PrebuiltResourceInstance.query.get(instance_id)
-    if not instance:
-        return jsonify({"error": "Prebuilt resource instance not found"}), 404
+def get_instance_route(instance_id):
+    response, status = get_instance(instance_id)
+    return jsonify(response), status
 
-    return jsonify({
-        "id": instance.id,
-        "project_id": instance.project_id,
-        "resource_id": instance.resource_id,
-        "custom_config": instance.custom_config,
-        "assigned_ports": instance.assigned_ports,
-        "status": instance.status,
-        "created_at": instance.created_at,
-        "updated_at": instance.updated_at
-    }), 200
-
-# ===============================
 # 📌 UPDATE PREBUILT RESOURCE INSTANCE (PUT)
-# ===============================
 @prebuilt_resource_instance_bp.route('/<int:instance_id>', methods=['PUT'])
-def update_prebuilt_resource_instance(instance_id):
-    instance = PrebuiltResourceInstance.query.get(instance_id)
-    if not instance:
-        return jsonify({"error": "Prebuilt resource instance not found"}), 404
-
+def update_instance_route(instance_id):
     try:
         data = request.get_json()
-
-        if 'project_id' in data:
-            project = Project.query.get(data['project_id'])
-            if not project:
-                return jsonify({"error": "Project not found"}), 404
-            instance.project_id = data['project_id']
-
-        if 'resource_id' in data:
-            resource = PrebuiltResource.query.get(data['resource_id'])
-            if not resource:
-                return jsonify({"error": "Prebuilt resource not found"}), 404
-            instance.resource_id = data['resource_id']
-
-        if 'custom_config' in data:
-            instance.custom_config = data['custom_config']
-
-        if 'assigned_ports' in data:
-            instance.assigned_ports = data['assigned_ports']
-
-        if 'status' in data:
-            instance.status = data['status']
-
-        db.session.commit()
-        return jsonify({"message": "Prebuilt resource instance updated successfully"}), 200
-
+        response, status = update_instance(instance_id, data)
+        return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ===============================
 # 📌 DELETE PREBUILT RESOURCE INSTANCE (DELETE)
-# ===============================
 @prebuilt_resource_instance_bp.route('/<int:instance_id>', methods=['DELETE'])
-def delete_prebuilt_resource_instance(instance_id):
-    instance = PrebuiltResourceInstance.query.get(instance_id)
-    if not instance:
-        return jsonify({"error": "Prebuilt resource instance not found"}), 404
-
-    db.session.delete(instance)
-    db.session.commit()
-
-    return jsonify({"message": "Prebuilt resource instance deleted successfully"}), 200
+def delete_instance_route(instance_id):
+    response, status = delete_instance(instance_id)
+    return jsonify(response), status
