@@ -51,7 +51,7 @@ def create_app():
     migrate.init_app(app, db)
 
     # Register Blueprints
-    from .routes.server_routes import server_bp
+    from .routers.server_routes import server_bp
 
     app.register_blueprint(server_bp, url_prefix="/api/servers")
 
