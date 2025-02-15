@@ -49,11 +49,20 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    
+    from .models import Server, Project, PrebuiltResourceInstance, UserBuiltInstance  
 
     # Register Blueprints
     from .routers.server_routes import server_bp
+    from .routers.project_routes import project_bp
+    from .routers.prebuilt_resource_routes import prebuilt_resource_bp
+    from .routers.prebuilt_resource_instance_routes import prebuilt_resource_instance_bp
 
     app.register_blueprint(server_bp, url_prefix="/api/servers")
-
+    app.register_blueprint(project_bp, url_prefix="/api/projects")
+    app.register_blueprint(prebuilt_resource_bp, url_prefix="/api/prebuilt-resources")
+    app.register_blueprint(prebuilt_resource_instance_bp, url_prefix="/api/prebuilt-resource-instances")
+    
+    
 
     return app
