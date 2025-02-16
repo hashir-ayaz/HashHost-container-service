@@ -14,8 +14,8 @@ class PrebuiltResource(db.Model):
     # Default configuration settings for the resource.
     default_config = db.Column(db.JSON, nullable=True)
     
-    # Required ports stored as a dictionary, e.g., {"http": 80, "https": 443, "db": 27017}
-    required_ports = db.Column(db.JSON, nullable=False, default={})
+    # Required ports stored as a list, e.g., [80, 443, 27017]
+    required_ports = db.Column(db.JSON, nullable=False, default=[])  # Changed from dictionary to list
     
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

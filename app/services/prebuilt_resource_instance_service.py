@@ -3,10 +3,12 @@ from app import db
 from app.models.prebuilt_resource_instance import PrebuiltResourceInstance
 from app.models.project import Project
 from app.models.prebuilt_resource import PrebuiltResource
+import docker 
+
+docker_client = docker.from_env()
 
 def create_instance_service(data):
-    # Validate required fields
-    if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_ports' not in data:
+    if not data or 'project_id' not in data or 'resource_id' not in data:
         return {"error": "Missing required fields"}, 400
 
     # Ensure the project exists
@@ -22,10 +24,13 @@ def create_instance_service(data):
     new_instance = PrebuiltResourceInstance(
         project_id=data['project_id'],
         resource_id=data['resource_id'],
-        custom_config=data.get('custom_config', {}),
-        assigned_ports=data['assigned_ports'],
-        status=data.get('status', 'pending')
+        name=data.get('name', 'Instance'),
+        custom_config=data.get('custom_config'),
+        assigned_ports=data.get('assigned_ports', {}),
+        status=data.get('status', 'pending'),
+        environment_variables=data.get('environment_variables')
     )
+    
     db.session.add(new_instance)
     db.session.commit()
     return {"message": "Prebuilt resource instance created successfully", "instance_id": new_instance.id}, 201
@@ -37,11 +42,13 @@ def get_all_instances_service():
             "id": instance.id,
             "project_id": instance.project_id,
             "resource_id": instance.resource_id,
+            "name": instance.name,
             "custom_config": instance.custom_config,
             "assigned_ports": instance.assigned_ports,
             "status": instance.status,
-            "created_at": instance.created_at,
-            "updated_at": instance.updated_at
+            "environment_variables": instance.environment_variables,
+            "created_at": instance.created_at.isoformat(),
+            "updated_at": instance.updated_at.isoformat()
         }
         for instance in instances
     ]
@@ -56,11 +63,13 @@ def get_instance_service(instance_id):
         "id": instance.id,
         "project_id": instance.project_id,
         "resource_id": instance.resource_id,
+        "name": instance.name,
         "custom_config": instance.custom_config,
         "assigned_ports": instance.assigned_ports,
         "status": instance.status,
-        "created_at": instance.created_at,
-        "updated_at": instance.updated_at
+        "environment_variables": instance.environment_variables,
+        "created_at": instance.created_at.isoformat(),
+        "updated_at": instance.updated_at.isoformat()
     }, 200
 
 def update_instance_service(instance_id, data):
@@ -68,35 +77,85 @@ def update_instance_service(instance_id, data):
     if not instance:
         return {"error": "Prebuilt resource instance not found"}, 404
 
-    if 'project_id' in data:
-        project = Project.query.get(data['project_id'])
-        if not project:
-            return {"error": "Project not found"}, 404
-        instance.project_id = data['project_id']
+    updatable_fields = [
+        'project_id', 'resource_id', 'name', 'custom_config', 
+        'assigned_ports', 'status', 'environment_variables'
+    ]
 
-    if 'resource_id' in data:
-        resource = PrebuiltResource.query.get(data['resource_id'])
-        if not resource:
-            return {"error": "Prebuilt resource not found"}, 404
-        instance.resource_id = data['resource_id']
-
-    if 'custom_config' in data:
-        instance.custom_config = data['custom_config']
-
-    if 'assigned_ports' in data:
-        instance.assigned_ports = data['assigned_ports']
-
-    if 'status' in data:
-        instance.status = data['status']
+    for field in updatable_fields:
+        if field in data:
+            # Validate foreign keys
+            if field == 'project_id':
+                project = Project.query.get(data['project_id'])
+                if not project:
+                    return {"error": "Project not found"}, 404
+            elif field == 'resource_id':
+                resource = PrebuiltResource.query.get(data['resource_id'])
+                if not resource:
+                    return {"error": "Prebuilt resource not found"}, 404
+            
+            setattr(instance, field, data[field])
 
     db.session.commit()
     return {"message": "Prebuilt resource instance updated successfully"}, 200
+
+def create_running_instance(data):
+    # First create the instance in the database
+    result, status_code = create_instance_service(data)
+    if status_code != 201:
+        return result, status_code
+    
+    instance_id = result["instance_id"]
+    instance = PrebuiltResourceInstance.query.get(instance_id)
+    resource = PrebuiltResource.query.get(instance.resource_id)
+    
+    try:
+        # Run the Docker container
+        container = docker_client.containers.run(
+            image=resource.image,
+            name=f"{instance.name}-{instance.id}",
+            detach=True,
+            ports=instance.assigned_ports,
+            environment=instance.environment_variables or {}
+        )
+        
+        # Update instance status to active
+        instance.status = 'active'
+        db.session.commit()
+        
+        print(f"Container {container.id} is running")
+        
+        return {
+            "message": "Instance created and container running",
+            "instance_id": instance.id,
+            "container_id": container.id
+        }, 201
+        
+    except Exception as e:
+        # Update instance status to failed
+        print(f"Failed to create container: {str(e)}")
+        instance.status = 'failed'
+        db.session.commit()
+        return {"error": f"Failed to create container: {str(e)}"}, 500
 
 def delete_instance_service(instance_id):
     instance = PrebuiltResourceInstance.query.get(instance_id)
     if not instance:
         return {"error": "Prebuilt resource instance not found"}, 404
 
-    db.session.delete(instance)
-    db.session.commit()
-    return {"message": "Prebuilt resource instance deleted successfully"}, 200
+    try:
+        # Try to stop and remove the container if it exists
+        container_name = f"{instance.name}-{instance.id}"
+        try:
+            container = docker_client.containers.get(container_name)
+            container.stop()
+            container.remove()
+        except docker.errors.NotFound:
+            pass  # Container doesn't exist, continue with instance deletion
+        
+        db.session.delete(instance)
+        db.session.commit()
+        return {"message": "Instance and container deleted successfully"}, 200
+        
+    except Exception as e:
+        return {"error": f"Failed to delete instance: {str(e)}"}, 500

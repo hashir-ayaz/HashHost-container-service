@@ -4,11 +4,19 @@ from app.services.prebuilt_resource_instance_service import (
     get_all_instances_service,
     get_instance_service,
     update_instance_service,
-    delete_instance_service
+    delete_instance_service,
+    create_running_instance
 )
 
 def create_instance(data):
-    return create_instance_service(data)
+    
+    try:
+        create_instance_service(data)
+        create_running_instance(data)
+        return {"message": "Prebuilt resource instance created successfully"}, 201
+    except Exception as e:
+        return {"error": str(e),
+                "message":"There was an issue creating the container"}, 500
 
 def get_all_instances():
     return get_all_instances_service()

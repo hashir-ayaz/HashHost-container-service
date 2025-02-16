@@ -6,6 +6,9 @@ def create_prebuilt_resource_service(data):
     if not data or 'name' not in data or 'image' not in data or 'required_ports' not in data:
         return {"error": "Missing required fields"}, 400
 
+
+
+    # saving to db 
     new_resource = PrebuiltResource(
         name=data['name'],
         description=data.get('description', ""),
@@ -77,3 +80,5 @@ def delete_prebuilt_resource_service(resource_id):
     db.session.delete(resource)
     db.session.commit()
     return {"message": "Prebuilt resource deleted successfully"}, 200
+
+

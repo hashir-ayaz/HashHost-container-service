@@ -9,6 +9,8 @@ class PrebuiltResourceInstance(db.Model):
     # Link to the project that owns this instance
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
     
+    name = db.Column(db.String(100), nullable=False, default='Instance',server_default='Instance')
+    
     # Link to the prebuilt resource type (e.g., MongoDB, Redis)
     resource_id = db.Column(db.Integer, db.ForeignKey('prebuilt_resources.id'), nullable=False)
 
@@ -20,6 +22,9 @@ class PrebuiltResourceInstance(db.Model):
     
     # Deployment status: active, stopped, failed, etc.
     status = db.Column(db.String(50), nullable=False, default='pending')
+    
+    # environment variables
+    environment_variables = db.Column(db.JSON, nullable=True)
     
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
