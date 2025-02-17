@@ -17,6 +17,8 @@ class PrebuiltResource(db.Model):
     # Required ports stored as a list, e.g., [80, 443, 27017]
     required_ports = db.Column(db.JSON, nullable=False, default={})  
     
+    volume_path = db.Column(db.String(255), nullable=True)
+    
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
