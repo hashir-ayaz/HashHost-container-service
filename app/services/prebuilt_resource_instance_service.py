@@ -8,7 +8,7 @@ import docker
 docker_client = docker.from_env()
 
 def create_instance_service(data, available_ports):
-    if not data or 'project_id' not in data or 'resource_id' not in data:
+    if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_volume_path' not in data:
         return {"error": "Missing required fields"}, 400
 
     # Ensure the project exists
@@ -30,7 +30,8 @@ def create_instance_service(data, available_ports):
         # TODO data doesnt have assigned ports to set
         assigned_ports=available_ports,
         status=data.get('status', 'pending'),
-        environment_variables=data.get('environment_variables')
+        environment_variables=data.get('environment_variables'),
+        assigned_volume_path=data.get('assigned_volume_path')
     )
     
     db.session.add(new_instance)
@@ -111,14 +112,20 @@ def create_running_instance(data, available_ports):
     instance = PrebuiltResourceInstance.query.get(instance_id)
     resource = PrebuiltResource.query.get(instance.resource_id)
     
+    if instance.assigned_volume_path:
+        container_volume = instance.assigned_volume_path
+    else:
+        container_volume = resource.volume_path
     try:
         # Run the Docker container
+        container_name = f"{instance.name}-{instance.id}"
         container = docker_client.containers.run(
             image=resource.image,
-            name=f"{instance.name}-{instance.id}",
+            name=container_name,
             detach=True,
             ports=instance.assigned_ports,
-            environment=instance.environment_variables or {}
+            environment=instance.environment_variables or {},
+            volumes={container_name: {'bind': container_volume, 'mode': 'rw'}} 
         )
         
         # Update instance status to active
@@ -126,6 +133,8 @@ def create_running_instance(data, available_ports):
         db.session.commit()
         
         print(f"Container {container.id} is running")
+        
+        print(container)
         
         return {
             "message": "Instance created and container running",

@@ -20,6 +20,7 @@ class PrebuiltResourceInstance(db.Model):
     # Assigned ports for this instance (may differ from the default required_ports)
     assigned_ports = db.Column(db.JSON, nullable=False, default={})
     
+    assigned_volume_path = db.Column(db.String(255), nullable=True)
     # Deployment status: active, stopped, failed, etc.
     status = db.Column(db.String(50), nullable=False, default='pending')
     
