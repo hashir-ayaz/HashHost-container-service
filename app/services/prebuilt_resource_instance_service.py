@@ -7,7 +7,7 @@ import docker
 
 docker_client = docker.from_env()
 
-def create_instance_service(data):
+def create_instance_service(data, available_ports):
     if not data or 'project_id' not in data or 'resource_id' not in data:
         return {"error": "Missing required fields"}, 400
 
@@ -26,7 +26,9 @@ def create_instance_service(data):
         resource_id=data['resource_id'],
         name=data.get('name', 'Instance'),
         custom_config=data.get('custom_config'),
-        assigned_ports=data.get('assigned_ports', {}),
+        
+        # TODO data doesnt have assigned ports to set
+        assigned_ports=available_ports,
         status=data.get('status', 'pending'),
         environment_variables=data.get('environment_variables')
     )
@@ -99,9 +101,9 @@ def update_instance_service(instance_id, data):
     db.session.commit()
     return {"message": "Prebuilt resource instance updated successfully"}, 200
 
-def create_running_instance(data):
+def create_running_instance(data, available_ports):
     # First create the instance in the database
-    result, status_code = create_instance_service(data)
+    result, status_code = create_instance_service(data, available_ports)
     if status_code != 201:
         return result, status_code
     
