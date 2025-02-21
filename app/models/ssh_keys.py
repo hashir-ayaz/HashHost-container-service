@@ -11,7 +11,9 @@ class SSHKey(db.Model):
     server_id = db.Column(db.Integer, db.ForeignKey('servers.id'), nullable=False)
     
     # SSH key in PEM format
-    key = db.Column(db.String(4096), nullable=False)
+    public_key = db.Column(db.String(4096), nullable=False)
+    
+    private_key = db.Column(db.String(4096), nullable=False)
     
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
