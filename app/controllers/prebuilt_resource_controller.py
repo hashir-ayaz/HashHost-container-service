@@ -7,17 +7,23 @@ from app.services.prebuilt_resource_service import (
     delete_prebuilt_resource_service
 )
 
-def create_prebuilt_resource(data):
-    return create_prebuilt_resource_service(data)
+class PrebuiltResourceController:
+    @staticmethod
+    def create_prebuilt_resource(data):
+        return create_prebuilt_resource_service(data)
 
-def get_all_prebuilt_resources():
-    return get_all_prebuilt_resources_service()
+    @staticmethod
+    def get_all_prebuilt_resources():
+        return get_all_prebuilt_resources_service()
 
-def get_prebuilt_resource(resource_id):
-    return get_prebuilt_resource_service(resource_id)
+    @staticmethod
+    def get_prebuilt_resource(resource_id):
+        return get_prebuilt_resource_service(resource_id)
 
-def update_prebuilt_resource(resource_id, data):
-    return update_prebuilt_resource_service(resource_id, data)
+    @staticmethod
+    def update_prebuilt_resource(resource_id, data):
+        return update_prebuilt_resource_service(resource_id, data)
 
-def delete_prebuilt_resource(resource_id):
-    return delete_prebuilt_resource_service(resource_id)
+    @staticmethod
+    def delete_prebuilt_resource(resource_id):
+        return delete_prebuilt_resource_service(resource_id)
