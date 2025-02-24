@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from app.controllers.ssh_key_controller import SSHKeyController
 
 ssh_key_bp = Blueprint('ssh_key_bp', __name__)
 

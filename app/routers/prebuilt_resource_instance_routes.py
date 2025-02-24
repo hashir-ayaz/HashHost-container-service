@@ -1,12 +1,7 @@
 # routers/prebuilt_resource_instance_routes.py
 from flask import Blueprint, request, jsonify
-from app.controllers.prebuilt_resource_instance_controller import (
-    create_instance,
-    get_all_instances,
-    get_instance,
-    update_instance,
-    delete_instance
-)
+
+from app.controllers.prebuilt_resource_instance_controller import PrebuiltResourceInstanceController
 
 prebuilt_resource_instance_bp = Blueprint('prebuilt_resource_instance_bp', __name__)
 
@@ -15,7 +10,7 @@ prebuilt_resource_instance_bp = Blueprint('prebuilt_resource_instance_bp', __nam
 def create_instance_route():
     try:
         data = request.get_json()
-        response, status = create_instance(data)
+        response, status = PrebuiltResourceInstanceController.create_instance(data)
         return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -23,13 +18,13 @@ def create_instance_route():
 # GET ALL PREBUILT RESOURCE INSTANCES (GET)
 @prebuilt_resource_instance_bp.route('/', methods=['GET'])
 def get_all_instances_route():
-    response, status = get_all_instances()
+    response, status = PrebuiltResourceInstanceController.get_all_instances()
     return jsonify(response), status
 
 # GET A SINGLE PREBUILT RESOURCE INSTANCE BY ID (GET)
 @prebuilt_resource_instance_bp.route('/<int:instance_id>', methods=['GET'])
 def get_instance_route(instance_id):
-    response, status = get_instance(instance_id)
+    response, status = PrebuiltResourceInstanceController.get_instance(instance_id)
     return jsonify(response), status
 
 # UPDATE PREBUILT RESOURCE INSTANCE (PUT)
@@ -37,7 +32,7 @@ def get_instance_route(instance_id):
 def update_instance_route(instance_id):
     try:
         data = request.get_json()
-        response, status = update_instance(instance_id, data)
+        response, status = PrebuiltResourceInstanceController.update_instance(instance_id, data)
         return jsonify(response), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -45,5 +40,5 @@ def update_instance_route(instance_id):
 # DELETE PREBUILT RESOURCE INSTANCE (DELETE)
 @prebuilt_resource_instance_bp.route('/<int:instance_id>', methods=['DELETE'])
 def delete_instance_route(instance_id):
-    response, status = delete_instance(instance_id)
+    response, status = PrebuiltResourceInstanceController.delete_instance(instance_id)
     return jsonify(response), status
