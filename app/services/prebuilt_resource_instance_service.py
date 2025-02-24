@@ -5,9 +5,20 @@ from app.models.project import Project
 from app.models.prebuilt_resource import PrebuiltResource
 import docker 
 
-docker_client = docker.from_env()
+# docker_client = docker.from_env()
 
 class PrebuiltResourceInstanceService:
+    
+    @staticmethod
+    def get_docker_client(server_ip=None):
+        """Dynamically create a Docker client. Defaults to local if server_ip is not provided."""
+        if server_ip:
+            base_url = f"tcp://{server_ip}:2375"
+        else:
+            base_url = "unix://var/run/docker.sock"  # Local Docker daemon
+        
+        return docker.DockerClient(base_url=base_url)
+    
     @staticmethod
     def create_instance_service(data, available_ports):
         if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_volume_path' not in data:
@@ -108,9 +119,11 @@ class PrebuiltResourceInstanceService:
         return {"message": "Prebuilt resource instance updated successfully"}, 200
 
     @staticmethod
-    def create_running_instance(data, available_ports):
+    def create_running_instance(data, available_ports,server_ip=None):
+        docker_client = PrebuiltResourceInstanceService.get_docker_client(server_ip)
+
         # First create the instance in the database
-        result, status_code = create_instance_service(data, available_ports)
+        result, status_code = PrebuiltResourceInstance.create_instance_service(data, available_ports)
         if status_code != 201:
             return result, status_code
         
@@ -156,7 +169,9 @@ class PrebuiltResourceInstanceService:
             return {"error": f"Failed to create container: {str(e)}"}, 500
 
     @staticmethod
-    def delete_instance_service(instance_id):
+    def delete_instance_service(instance_id,server_ip):
+        docker_client = PrebuiltResourceInstanceService.get_docker_client(server_ip)
+
         instance = PrebuiltResourceInstance.query.get(instance_id)
         if not instance:
             return {"error": "Prebuilt resource instance not found"}, 404
