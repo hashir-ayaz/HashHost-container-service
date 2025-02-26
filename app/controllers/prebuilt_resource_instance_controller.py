@@ -12,8 +12,8 @@ class PrebuiltResourceInstanceController:
             
             required_ports = PrebuiltResource.query.get(data['resource_id']).required_ports
             available_ports = get_available_ports(required_ports)
-            
-            PrebuiltResourceInstanceService.create_running_instance(data, available_ports)
+            server_ip = data.get('server_ip')
+            PrebuiltResourceInstanceService.create_running_instance(data, available_ports,server_ip)
             return {"message": "Prebuilt resource instance created successfully"}, 201
         except Exception as e:
             return {"error": str(e),

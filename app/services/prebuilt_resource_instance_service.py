@@ -39,6 +39,7 @@ class PrebuiltResourceInstanceService:
             resource_id=data['resource_id'],
             name=data.get('name', 'Instance'),
             custom_config=data.get('custom_config'),
+            assigned_server = data.get('server_ip'),
             
             # TODO data doesnt have assigned ports to set
             assigned_ports=available_ports,
