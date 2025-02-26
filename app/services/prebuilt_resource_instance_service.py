@@ -20,8 +20,8 @@ class PrebuiltResourceInstanceService:
         return docker.DockerClient(base_url=base_url)
     
     @staticmethod
-    def create_instance_service(data, available_ports):
-        if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_volume_path' not in data:
+    def create_instance_service(data, port_mappings):
+        if not data or 'project_id' not in data or 'resource_id' not in data or 'assigned_volume_path' not in data or 'server_ip' not in data:
             return {"error": "Missing required fields"}, 400
 
         # Ensure the project exists
@@ -42,7 +42,7 @@ class PrebuiltResourceInstanceService:
             assigned_server = data.get('server_ip'),
             
             # TODO data doesnt have assigned ports to set
-            assigned_ports=available_ports,
+            assigned_ports=port_mappings,
             status=data.get('status', 'pending'),
             environment_variables=data.get('environment_variables'),
             assigned_volume_path=data.get('assigned_volume_path')
@@ -120,11 +120,11 @@ class PrebuiltResourceInstanceService:
         return {"message": "Prebuilt resource instance updated successfully"}, 200
 
     @staticmethod
-    def create_running_instance(data, available_ports,server_ip=None):
+    def create_running_instance(data, port_mappings,server_ip=None):
         docker_client = PrebuiltResourceInstanceService.get_docker_client(server_ip)
 
         # First create the instance in the database
-        result, status_code = PrebuiltResourceInstance.create_instance_service(data, available_ports)
+        result, status_code = PrebuiltResourceInstanceService.create_instance_service(data, port_mappings)
         if status_code != 201:
             return result, status_code
         
